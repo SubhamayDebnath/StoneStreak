@@ -1,0 +1,256 @@
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { CalendarPlus, Check, Minus, Plus } from 'lucide-react-native';
+import { useState } from 'react';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SectionLabel } from '@/components/SectionLabel';
+import { useTheme } from '@/hooks/useTheme';
+import { toDateKey } from '@/lib/date';
+import { errorMessage } from '@/lib/format';
+import { haptics } from '@/lib/haptics';
+import { isComplete } from '@/lib/tracking';
+import { useHabitStore } from '@/store/habitStore';
+import { Habit } from '@/types';
+
+const NOTE_BEFORE_CREATED =
+  "This is before you created this habit. It will be saved, but it won't count toward your streak or heat map.";
+const NOTE_NOT_SCHEDULED =
+  "This habit isn't scheduled on this weekday. It will be saved, but it won't count toward your streak.";
+
+export function LogPastDay({ habit }: { habit: Habit }) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [picked, setPicked] = useState<Date | null>(null);
+
+  const dateKey = picked ? toDateKey(picked) : '';
+  const count = useHabitStore((s) => s.counts[`${habit.id}|${dateKey}`] ?? 0);
+  const changeCount = useHabitStore((s) => s.changeCount);
+  const toggleCompletion = useHabitStore((s) => s.toggleCompletion);
+
+  const isCount = habit.trackingType === 'count';
+  const complete = isComplete(habit, count);
+
+  // 0 = Sunday ... 6 = Saturday (same as the reminder scheduling)
+  const notScheduled =
+    !!picked &&
+    habit.scheduleType === 'weekdays' &&
+    !habit.weekdays.includes(picked.getDay() as Habit['weekdays'][number]);
+
+  // Streaks and the heat map start on the day the habit was created
+  const beforeCreated =
+    !!picked && dateKey < toDateKey(new Date(habit.createdAt));
+
+  const openPicker = () => {
+    haptics.light();
+    const min = new Date();
+    min.setFullYear(min.getFullYear() - 1);
+    DateTimePickerAndroid.open({
+      value: picked ?? new Date(),
+      mode: 'date',
+      minimumDate: min,
+      maximumDate: new Date(),
+      onValueChange: (_event, date) => setPicked(date),
+    });
+  };
+
+  const close = () => setPicked(null);
+
+  const run = (action: Promise<unknown>) => {
+    action.catch((e) => Alert.alert('Could not save', errorMessage(e)));
+  };
+
+  const dateLabel = picked
+    ? picked.toLocaleDateString(undefined, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : '';
+
+  return (
+    <>
+      <SectionLabel>MISSED A DAY?</SectionLabel>
+      <Pressable
+        onPress={openPicker}
+        style={[styles.button, { backgroundColor: colors.card }]}
+      >
+        <CalendarPlus size={20} color={colors.primary} />
+        <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>
+          Log a past day
+        </Text>
+      </Pressable>
+
+      <Modal
+        visible={!!picked}
+        transparent
+        statusBarTranslucent
+        animationType="slide"
+        onRequestClose={close}
+      >
+        <Pressable style={styles.backdrop} onPress={close} />
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: colors.card, paddingBottom: insets.bottom + 20 },
+          ]}
+        >
+          <Text style={[styles.title, { color: colors.text }]}>
+            {habit.name}
+          </Text>
+          <Text style={{ color: colors.textSecondary, marginTop: 2 }}>
+            {dateLabel}
+          </Text>
+
+          {beforeCreated && (
+            <Text style={[styles.note, { color: colors.textSecondary }]}>
+              {NOTE_BEFORE_CREATED}
+            </Text>
+          )}
+          {notScheduled && (
+            <Text style={[styles.note, { color: colors.textSecondary }]}>
+              {NOTE_NOT_SCHEDULED}
+            </Text>
+          )}
+
+          {isCount ? (
+            <View style={styles.counter}>
+              <Pressable
+                onPress={() => {
+                  haptics.light();
+                  run(changeCount(habit.id, dateKey, -1));
+                }}
+                disabled={count === 0}
+                style={[
+                  styles.round,
+                  {
+                    backgroundColor: colors.background,
+                    opacity: count === 0 ? 0.4 : 1,
+                  },
+                ]}
+              >
+                <Minus size={22} color={colors.text} />
+              </Pressable>
+
+              <View style={styles.countBox}>
+                <Text style={[styles.countText, { color: colors.text }]}>
+                  {count}
+                </Text>
+                <Text style={{ color: colors.textSecondary }}>
+                  of {habit.target}
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => {
+                  haptics.light();
+                  run(changeCount(habit.id, dateKey, 1));
+                }}
+                style={[styles.round, { backgroundColor: habit.color }]}
+              >
+                <Plus size={22} color="#FFFFFF" />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => {
+                haptics.light();
+                run(toggleCompletion(habit.id, dateKey));
+              }}
+              style={[
+                styles.check,
+                {
+                  backgroundColor: complete ? habit.color : colors.background,
+                  borderColor: complete ? habit.color : colors.border,
+                },
+              ]}
+            >
+              <Check
+                size={22}
+                color={complete ? '#FFFFFF' : colors.textSecondary}
+              />
+              <Text
+                style={{
+                  color: complete ? '#FFFFFF' : colors.text,
+                  fontSize: 16,
+                  fontWeight: '700',
+                }}
+              >
+                {complete ? 'Done (tap to undo)' : 'Mark as done'}
+              </Text>
+            </Pressable>
+          )}
+
+          {/* Changes above are saved as you tap, so this only closes the sheet */}
+          <Pressable
+            onPress={() => {
+              haptics.success();
+              close();
+            }}
+            style={[styles.finish, { backgroundColor: colors.primary }]}
+          >
+            <Text
+              style={{
+                color: colors.onPrimary,
+                fontSize: 16,
+                fontWeight: '700',
+              }}
+            >
+              Done
+            </Text>
+          </Pressable>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderRadius: 14,
+    paddingVertical: 15,
+  },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  sheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+  },
+  title: { fontSize: 20, fontWeight: '800' },
+  note: { fontSize: 13, marginTop: 12, lineHeight: 18 },
+  counter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 28,
+    marginVertical: 28,
+  },
+  round: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countBox: { alignItems: 'center', minWidth: 72 },
+  countText: { fontSize: 40, fontWeight: '800' },
+  check: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 16,
+    marginVertical: 24,
+  },
+  finish: {
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingVertical: 15,
+  },
+});
