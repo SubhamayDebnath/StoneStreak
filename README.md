@@ -207,3 +207,21 @@ eas build --platform android --profile production   # app bundle for the Play St
 ## License
 
 See the `LICENSE` file in this repository.
+
+## Home screen widget (Android)
+
+A small 4x2 widget: rounded progress ring for today, your 5 most regular habits
+(solid icon = done today), a mini heat map, and a refresh button. Tapping the widget
+opens the app. It follows the system light / dark theme.
+
+It needs native code, so it does **not** work in Expo Go. Use a development build or an APK:
+
+```bash
+npm install
+npx eas-cli@latest build --platform android --profile development   # or: --profile preview (APK)
+```
+
+Or build locally with `npx expo run:android`. Then long-press the home screen,
+open Widgets, and add **StoneStreak**.
+
+Code lives in `src/widget/`. The widget `name` in `app.json` must stay `StoneStreak`.

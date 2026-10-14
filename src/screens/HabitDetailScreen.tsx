@@ -148,7 +148,9 @@ export function HabitDetailScreen() {
     <>
       <Stack.Screen
         options={{
-          title: habit.name,
+          // No title between Close and Edit (the habit name is in the card below)
+          title: '',
+          headerTitle: '',
           headerBackVisible: false,
           headerLeft: () => (
             <Pressable onPress={onClose} hitSlop={10}>

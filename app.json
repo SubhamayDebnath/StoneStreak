@@ -7,9 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "stonestreak",
     "userInterfaceStyle": "automatic",
-    "platforms": [
-      "android"
-    ],
+    "platforms": ["android"],
     "android": {
       "package": "com.stonestreak.app",
       "adaptiveIcon": {
@@ -19,9 +17,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "VIBRATE"
-      ],
+      "permissions": ["VIBRATE"],
       "versionCode": 1
     },
     "plugins": [
@@ -46,6 +42,24 @@
           "icon": "./assets/images/notification-icon.png",
           "color": "#3B82F6",
           "defaultChannel": "habit-reminders"
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "StoneStreak",
+              "label": "StoneStreak",
+              "description": "Today's progress, top habits and heat map",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
         }
       ]
     ],

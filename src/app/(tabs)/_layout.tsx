@@ -10,6 +10,7 @@ import { useNotificationTap } from '@/hooks/useNotificationTap';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useReminderSync } from '@/hooks/useReminderSync';
 import { useTheme } from '@/hooks/useTheme';
+import { useWidgetSync } from '@/hooks/useWidgetSync';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
 
 export default function TabsLayout() {
@@ -17,6 +18,7 @@ export default function TabsLayout() {
   const { ready, show, finish } = useOnboarding();
   useReminderSync();
   useNotificationTap();
+  useWidgetSync();
 
   return (
     <View style={styles.root}>
