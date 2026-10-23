@@ -8,15 +8,15 @@ import { formatTime, scheduleLabel } from '@/lib/date';
 import { errorMessage } from '@/lib/format';
 import { haptics } from '@/lib/haptics';
 import { useHabitStore } from '@/store/habitStore';
+import { showToast } from '@/lib/toast';
 import { Habit } from '@/types';
 
 interface Props {
   habit: Habit;
-  date: string; // "YYYY-MM-DD"
+  date: string;
   completed: boolean;
-  /** How many times it was logged today (count habits) */
   count: number;
-  streak: number;
+  streak?: number;
 }
 
 function HabitRowBase({ habit, date, completed, count, streak }: Props) {
@@ -29,8 +29,12 @@ function HabitRowBase({ habit, date, completed, count, streak }: Props) {
   const onToggle = async () => {
     try {
       const nowDone = await toggle(habit.id, date);
-      if (nowDone) haptics.success();
-      else haptics.light();
+      if (nowDone) {
+        haptics.success();
+        showToast(`${habit.name} completed!`);
+      } else {
+        haptics.light();
+      }
     } catch (e) {
       Alert.alert('Could not save', errorMessage(e));
     }
@@ -39,8 +43,12 @@ function HabitRowBase({ habit, date, completed, count, streak }: Props) {
   const onChange = async (delta: number) => {
     try {
       const nowDone = await changeCount(habit.id, date, delta);
-      if (delta > 0 && nowDone && !completed) haptics.success();
-      else haptics.light();
+      if (delta > 0 && nowDone && !completed) {
+        haptics.success();
+        showToast(`Goal reached for ${habit.name}!`);
+      } else {
+        haptics.light();
+      }
     } catch (e) {
       Alert.alert('Could not save', errorMessage(e));
     }
@@ -51,11 +59,12 @@ function HabitRowBase({ habit, date, completed, count, streak }: Props) {
       onPress={() =>
         router.push({ pathname: '/habit-detail', params: { id: habit.id } })
       }
-      style={[styles.row, { backgroundColor: colors.card }]}
+      style={[
+        styles.row,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
     >
-      <View style={{ opacity: completed ? 0.55 : 1 }}>
-        <HabitIcon name={habit.icon} color={habit.color} />
-      </View>
+      <HabitIcon name={habit.icon} color={habit.color} size={42} />
 
       <View style={styles.info}>
         <Text
@@ -64,40 +73,34 @@ function HabitRowBase({ habit, date, completed, count, streak }: Props) {
             styles.name,
             {
               color: colors.text,
-              textDecorationLine: completed ? 'line-through' : 'none',
-              opacity: completed ? 0.55 : 1,
             },
           ]}
         >
           {habit.name}
         </Text>
 
-        {habit.description ? (
-          <Text
-            numberOfLines={1}
-            style={[styles.description, { color: colors.textSecondary }]}
-          >
-            {habit.description}
-          </Text>
-        ) : null}
-
         <View style={styles.meta}>
           <Text style={[styles.metaText, { color: colors.textSecondary }]}>
             {scheduleLabel(habit)}
           </Text>
-          {habit.reminderTime && (
+          {typeof streak === 'number' && streak > 0 && (
             <View style={styles.inline}>
-              <Bell size={12} color={colors.textSecondary} />
-              <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-                {formatTime(habit.reminderTime)}
+              <Flame size={12} color={colors.streak} fill={colors.streak} />
+              <Text
+                style={[
+                  styles.metaText,
+                  { color: colors.streak, fontWeight: '600' },
+                ]}
+              >
+                {streak}
               </Text>
             </View>
           )}
-          {streak > 0 && (
+          {habit.reminderTime && (
             <View style={styles.inline}>
-              <Flame size={12} color="#F59E0B" />
+              <Bell size={11} color={colors.textSecondary} />
               <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-                {streak}
+                {formatTime(habit.reminderTime)}
               </Text>
             </View>
           )}
@@ -112,10 +115,15 @@ function HabitRowBase({ habit, date, completed, count, streak }: Props) {
             hitSlop={8}
             style={[
               styles.circleBtn,
-              { borderColor: habit.color, opacity: count === 0 ? 0.35 : 1 },
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.cardSubtle,
+                opacity: count === 0 ? 0.35 : 1,
+              },
             ]}
+            accessibilityLabel={`Decrease count for ${habit.name}`}
           >
-            <Minus size={16} color={habit.color} strokeWidth={3} />
+            <Minus size={14} color={colors.text} strokeWidth={2.5} />
           </Pressable>
 
           <Text
@@ -132,25 +140,30 @@ function HabitRowBase({ habit, date, completed, count, streak }: Props) {
             hitSlop={8}
             style={[
               styles.circleBtn,
-              { borderColor: habit.color, backgroundColor: habit.color },
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.cardSubtle,
+              },
             ]}
+            accessibilityLabel={`Increase count for ${habit.name}`}
           >
-            <Plus size={16} color="#FFFFFF" strokeWidth={3} />
+            <Plus size={14} color={colors.text} strokeWidth={2.5} />
           </Pressable>
         </View>
       ) : (
         <Pressable
           onPress={onToggle}
           hitSlop={10}
+          accessibilityLabel={`Mark ${habit.name} as ${completed ? 'incomplete' : 'complete'}`}
           style={[
             styles.check,
             {
-              borderColor: habit.color,
+              borderColor: completed ? habit.color : colors.border,
               backgroundColor: completed ? habit.color : 'transparent',
             },
           ]}
         >
-          {completed && <Check size={18} color="#FFFFFF" strokeWidth={3} />}
+          {completed && <Check size={16} color="#FFFFFF" strokeWidth={3.2} />}
         </Pressable>
       )}
     </Pressable>
@@ -163,38 +176,59 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
     gap: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 13,
+    marginBottom: 10,
   },
   info: { flex: 1 },
-  name: { fontSize: 17, fontWeight: '600' },
-  description: { fontSize: 13, marginTop: 2 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-  inline: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  metaText: { fontSize: 12 },
+  name: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
+  },
+  inline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  metaText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
   check: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    borderWidth: 2,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  counter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  counter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   circleBtn: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    borderWidth: 2,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   countText: {
-    minWidth: 44,
+    minWidth: 42,
     textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

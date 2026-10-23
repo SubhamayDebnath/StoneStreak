@@ -34,6 +34,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
-  title: { fontSize: 30, fontWeight: '800' },
+  title: { fontSize: 28, fontWeight: '600' },
   body: { flex: 1 },
 });

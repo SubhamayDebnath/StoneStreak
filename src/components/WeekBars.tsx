@@ -39,7 +39,7 @@ export function WeekBars({ cells }: { cells: HeatCell[] }) {
             <Text
               style={{
                 color: isToday ? colors.primary : colors.textSecondary,
-                fontWeight: isToday ? '800' : '600',
+                fontWeight: '600',
                 fontSize: 12,
               }}
             >

@@ -96,7 +96,7 @@ export function getHabitsForDate(habits: Habit[], date: Date): Habit[] {
   );
 }
 
-/** Today's progress, used by the Today screen and the widget. */
+/** Today's progress, used by the Today screen. */
 export function getDayProgress(
   habits: Habit[],
   done: DoneMap,

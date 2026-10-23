@@ -43,24 +43,6 @@
           "color": "#3B82F6",
           "defaultChannel": "habit-reminders"
         }
-      ],
-      [
-        "react-native-android-widget",
-        {
-          "widgets": [
-            {
-              "name": "StoneStreak",
-              "label": "StoneStreak",
-              "description": "Today's progress, top habits and heat map",
-              "minWidth": "250dp",
-              "minHeight": "110dp",
-              "targetCellWidth": 4,
-              "targetCellHeight": 2,
-              "resizeMode": "horizontal|vertical",
-              "updatePeriodMillis": 1800000
-            }
-          ]
-        }
       ]
     ],
     "experiments": {

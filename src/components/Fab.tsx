@@ -13,7 +13,13 @@ export function Fab({ onPress }: { onPress: () => void }) {
         onPress();
       }}
       accessibilityLabel="Add habit"
-      style={[styles.fab, { backgroundColor: colors.primary }]}
+      style={[
+        styles.fab,
+        {
+          backgroundColor: colors.primary,
+          borderColor: colors.border,
+        },
+      ]}
     >
       <Plus size={28} color={colors.onPrimary} strokeWidth={2.4} />
     </Pressable>
@@ -27,13 +33,9 @@ const styles = StyleSheet.create({
     bottom: 20,
     width: 52,
     height: 52,
-    borderRadius: 30,
+    borderRadius: 26,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
   },
 });

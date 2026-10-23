@@ -13,10 +13,16 @@ export function EmptyState({ Icon, title, text }: Props) {
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.outer, { backgroundColor: colors.primary + '22' }]}>
-        <View style={[styles.inner, { backgroundColor: colors.primary }]}>
-          <Icon size={34} color={colors.onPrimary} strokeWidth={2.2} />
-        </View>
+      <View
+        style={[
+          styles.iconContainer,
+          {
+            backgroundColor: colors.cardSubtle,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <Icon size={24} color={colors.primary} strokeWidth={2} />
       </View>
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       <Text style={[styles.text, { color: colors.textSecondary }]}>{text}</Text>
@@ -25,22 +31,32 @@ export function EmptyState({ Icon, title, text }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', paddingHorizontal: 32, paddingTop: 72 },
-  outer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  wrap: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+    paddingHorizontal: 24,
+    paddingTop: 54,
+    paddingBottom: 24,
   },
-  inner: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+  iconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
-  text: { fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 8 },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    letterSpacing: -0.2,
+    marginTop: 14,
+  },
+  text: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    marginTop: 6,
+    maxWidth: 270,
+  },
 });

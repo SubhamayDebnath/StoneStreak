@@ -4,20 +4,19 @@ import { useTheme } from '@/hooks/useTheme';
 
 interface Props {
   icon: ReactNode;
+  iconBg?: string;
   title: string;
   subtitle?: string;
-  /** Makes the row tappable. Leave undefined for static rows or rows with a control. */
   onPress?: () => void;
-  /** Control shown at the right side, e.g. a Switch or a value label */
   right?: ReactNode;
   disabled?: boolean;
   danger?: boolean;
-  /** Draw a thin line under the row */
   divider?: boolean;
 }
 
 export function SettingsRow({
   icon,
+  iconBg,
   title,
   subtitle,
   onPress,
@@ -35,14 +34,24 @@ export function SettingsRow({
       android_ripple={onPress ? { color: colors.border } : undefined}
       style={[
         styles.row,
-        disabled && { opacity: 0.6 },
+        disabled && { opacity: 0.5 },
         divider && {
           borderBottomWidth: StyleSheet.hairlineWidth,
           borderBottomColor: colors.border,
         },
       ]}
     >
-      {icon}
+      <View
+        style={[
+          styles.iconWrap,
+          {
+            backgroundColor:
+              iconBg || (danger ? colors.danger : colors.primary),
+          },
+        ]}
+      >
+        {icon}
+      </View>
       <View style={styles.texts}>
         <Text
           style={[
@@ -52,11 +61,16 @@ export function SettingsRow({
         >
           {title}
         </Text>
-        {subtitle ? (
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        {subtitle && (
+          <Text
+            style={[
+              styles.subtitle,
+              { color: danger ? colors.danger : colors.textSecondary },
+            ]}
+          >
             {subtitle}
           </Text>
-        ) : null}
+        )}
       </View>
       {right}
     </Pressable>
@@ -64,8 +78,20 @@ export function SettingsRow({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+  },
+  iconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   texts: { flex: 1 },
-  title: { fontSize: 16, fontWeight: '600' },
-  subtitle: { fontSize: 13, marginTop: 1 },
+  title: { fontSize: 15, fontWeight: '600' },
+  subtitle: { fontSize: 12, marginTop: 2 },
 });

@@ -1,55 +1,71 @@
 export const lightColors = {
-  background: '#F2F2F7',
+  background: '#FAFAFA', // Tailwind neutral-50 / zinc-50
   card: '#FFFFFF',
-  text: '#111111',
-  textSecondary: '#6B7280',
-  border: '#E5E7EB',
-  primary: '#208AEF',
+  cardSubtle: '#F4F4F5', // Tailwind zinc-100
+  text: '#09090B', // Tailwind zinc-950
+  textSecondary: '#71717A', // Tailwind zinc-500
+  border: '#EAEAEB', // Soft, very close to card #FFFFFF
+  borderSubtle: '#EAEAEB',
+  primary: '#6366F1', // Soft pastel indigo accent
+  primaryLight: '#EEF2FF', // Pastel indigo-50
   onPrimary: '#FFFFFF',
-  success: '#22C55E',
-  danger: '#EF4444',
-  /** Solid red for filled destructive buttons (same in light and dark) */
-  dangerSolid: '#DC2626',
-  heat0: '#E5E7EB',
-  heat1: '#BBDDFB',
-  heat2: '#7DBBF7',
-  heat3: '#3C9CF2',
-  heat4: '#208AEF',
+  streak: '#FB923C', // Soft pastel flame
+  success: '#34D399', // Pastel mint / sage
+  successLight: '#ECFDF5',
+  warning: '#FBBF24', // Pastel honey
+  warningLight: '#FFFBEB',
+  danger: '#F87171', // Pastel coral rose
+  dangerLight: '#FEF2F2',
+  dangerSolid: '#EF4444',
+  heat0: '#EAEAEB',
+  heat1: '#C7D2FE',
+  heat2: '#A5B4FC',
+  heat3: '#818CF8',
+  heat4: '#6366F1',
 };
 
 export type AppColors = typeof lightColors;
 
 export const darkColors: AppColors = {
-  background: '#0F1115',
-  card: '#1A1D23',
-  text: '#F5F5F5',
-  textSecondary: '#9CA3AF',
-  border: '#2A2E37',
-  primary: '#4DA3FF',
-  onPrimary: '#0F1115',
-  success: '#4ADE80',
-  danger: '#F87171',
-  dangerSolid: '#DC2626',
-  heat0: '#262A32',
-  heat1: '#173B5C',
-  heat2: '#1E5B94',
-  heat3: '#2A7FD0',
-  heat4: '#4DA3FF',
+  background: '#09090B', // Pure rich neutral zinc (NOT bluish black)
+  card: '#18181B', // Tailwind zinc-900 neutral card
+  cardSubtle: '#27272A', // Tailwind zinc-800
+  text: '#FAFAFA', // Tailwind zinc-50
+  textSecondary: '#A1A1AA', // Tailwind zinc-400
+  border: '#262629', // Very close to card #18181B (subtle, soft, low-contrast)
+  borderSubtle: '#262629',
+  primary: '#818CF8', // Soft pastel periwinkle indigo
+  primaryLight: '#1E2038',
+  onPrimary: '#FFFFFF',
+  streak: '#FB923C', // Soft pastel flame
+  success: '#34D399', // Pastel mint / sage
+  successLight: '#064E3B',
+  warning: '#FBBF24', // Pastel honey
+  warningLight: '#451A03',
+  danger: '#F87171', // Pastel coral rose
+  dangerLight: '#450A0A',
+  dangerSolid: '#EF4444',
+  heat0: '#262629', // neutral zinc dark cell
+  heat1: '#312E81',
+  heat2: '#3730A3',
+  heat3: '#4F46E5',
+  heat4: '#818CF8',
 };
 
+// Curated pastel palette for modern aesthetic habit tracking
 export const habitPalette = [
-  '#EF4444', // red
-  '#F97316', // orange
-  '#F59E0B', // amber
-  '#84CC16', // lime
-  '#22C55E', // green
-  '#14B8A6', // teal
-  '#06B6D4', // cyan
-  '#0EA5E9', // sky
-  '#3B82F6', // blue
-  '#6366F1', // indigo
-  '#8B5CF6', // violet
-  '#A855F7', // purple
-  '#EC4899', // pink
-  '#F43F5E', // rose
+  '#6366F1', // Pastel Indigo
+  '#34D399', // Pastel Mint / Sage
+  '#FB923C', // Pastel Tangerine / Peach
+  '#F472B6', // Pastel Blossom Pink
+  '#A78BFA', // Pastel Lavender
+  '#38BDF8', // Pastel Sky Cyan
+  '#FBBF24', // Pastel Warm Honey
+  '#F87171', // Pastel Coral Rose
+  '#2DD4BF', // Pastel Seafoam Teal
+  '#C084FC', // Pastel Soft Lilac
+  '#A3E635', // Pastel Soft Lime
+  '#FB7185', // Pastel Soft Berry
+  '#60A5FA', // Pastel Soft Denim
+  '#FDBA74', // Pastel Soft Apricot
 ];

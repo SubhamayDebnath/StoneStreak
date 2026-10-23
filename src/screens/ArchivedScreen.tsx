@@ -15,6 +15,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { errorMessage } from '@/lib/format';
 import { haptics } from '@/lib/haptics';
 import { useHabitStore } from '@/store/habitStore';
+import { showToast } from '@/lib/toast';
 import { Habit } from '@/types';
 
 export function ArchivedScreen() {
@@ -28,6 +29,7 @@ export function ArchivedScreen() {
     try {
       await restoreHabit(habit.id);
       haptics.success();
+      showToast('Habit restored');
     } catch (e) {
       Alert.alert('Could not restore', errorMessage(e));
     }
@@ -37,7 +39,7 @@ export function ArchivedScreen() {
     haptics.warning();
     Alert.alert(
       'Delete permanently?',
-      `"${habit.name}" and its history will be removed. This can't be undone.`,
+      `"${habit.name}" and all of its history will be permanently deleted.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -47,6 +49,7 @@ export function ArchivedScreen() {
             try {
               haptics.heavy();
               await removeHabit(habit.id);
+              showToast('Habit deleted');
             } catch (e) {
               Alert.alert('Could not delete', errorMessage(e));
             }
@@ -63,22 +66,25 @@ export function ArchivedScreen() {
         style={{ backgroundColor: colors.background }}
         contentContainerStyle={{
           padding: 16,
-          paddingBottom: insets.bottom + 32,
+          paddingBottom: insets.bottom + 48,
         }}
       >
         {archived.length === 0 ? (
           <EmptyState
             Icon={Archive}
             title="No archived habits"
-            text="Archive a habit from its page to hide it without losing its history."
+            text="Archive a habit from its details page to hide it without losing history."
           />
         ) : (
           archived.map((habit) => (
             <View
               key={habit.id}
-              style={[styles.card, { backgroundColor: colors.card }]}
+              style={[
+                styles.card,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
             >
-              <HabitIcon name={habit.icon} color={habit.color} size={44} />
+              <HabitIcon name={habit.icon} color={habit.color} size={42} />
               <Text
                 numberOfLines={1}
                 style={[styles.name, { color: colors.text }]}
@@ -92,7 +98,7 @@ export function ArchivedScreen() {
                 accessibilityLabel={`Restore ${habit.name}`}
                 style={[styles.action, { backgroundColor: colors.primary }]}
               >
-                <RotateCcw size={18} color={colors.onPrimary} />
+                <RotateCcw size={16} color="#FFFFFF" strokeWidth={2.4} />
               </Pressable>
               <Pressable
                 onPress={() => onDelete(habit)}
@@ -100,7 +106,7 @@ export function ArchivedScreen() {
                 accessibilityLabel={`Delete ${habit.name}`}
                 style={[styles.action, { backgroundColor: colors.dangerSolid }]}
               >
-                <Trash2 size={18} color="#FFFFFF" />
+                <Trash2 size={16} color="#FFFFFF" strokeWidth={2.4} />
               </Pressable>
             </View>
           ))
@@ -116,14 +122,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderRadius: 16,
-    padding: 14,
+    borderWidth: 1,
+    padding: 13,
     marginBottom: 10,
   },
-  name: { flex: 1, fontSize: 17, fontWeight: '600' },
+  name: { flex: 1, fontSize: 15, fontWeight: '600' },
   action: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
   },

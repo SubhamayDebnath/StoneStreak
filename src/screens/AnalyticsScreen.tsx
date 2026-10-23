@@ -1,12 +1,13 @@
 import {
+  BarChart3,
   CircleCheck,
   Flame,
   Target,
-  TrendingUp,
   Trophy,
 } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState } from '@/components/EmptyState';
 import { HeatMap } from '@/components/HeatMap';
 import { Screen } from '@/components/Screen';
@@ -23,6 +24,7 @@ import { HeatCell } from '@/types';
 
 export function AnalyticsScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const habits = useHabitStore((s) => s.habits);
   const done = useHabitStore((s) => s.done);
@@ -50,56 +52,78 @@ export function AnalyticsScreen() {
   const describe = (cell: HeatCell) =>
     cell.scheduled === 0
       ? 'Nothing scheduled'
-      : `${cell.done} of ${cell.scheduled} done`;
+      : `${cell.done} of ${cell.scheduled} completed`;
 
   return (
-    <Screen title="Analytics">
+    <Screen title="Statistics">
       <ScrollView
         contentContainerStyle={{
           padding: 16,
-          paddingTop: 0,
-          paddingBottom: 32,
+          paddingTop: 4,
+          paddingBottom: insets.bottom + 120,
         }}
       >
         {habits.length === 0 ? (
           <EmptyState
-            Icon={TrendingUp}
-            title="No data yet"
-            text="Create a habit and check it off. Your analytics will show up here."
+            Icon={BarChart3}
+            title="No statistics yet"
+            text="Create a habit and complete it. Your progress statistics will show up here."
           />
         ) : (
           <>
-            <SectionLabel>OVERVIEW</SectionLabel>
+            <SectionLabel first>OVERVIEW</SectionLabel>
             <View style={styles.grid}>
               <StatCard
-                icon={<Flame size={22} color="#F59E0B" />}
+                icon={<Flame size={16} color="#FFFFFF" strokeWidth={2.4} />}
+                iconBg={colors.streak}
                 value={plural(overview.activeStreak, 'day')}
                 label="Current streak"
               />
               <StatCard
-                icon={<Trophy size={22} color={colors.primary} />}
+                icon={<Trophy size={16} color="#FFFFFF" strokeWidth={2.4} />}
+                iconBg={colors.primary}
                 value={plural(overview.bestStreak, 'day')}
                 label="Best streak"
               />
               <StatCard
-                icon={<Target size={22} color={colors.success} />}
+                icon={<Target size={16} color="#FFFFFF" strokeWidth={2.4} />}
+                iconBg={colors.success}
                 value={`${overview.rate30}%`}
                 label="Last 30 days"
               />
               <StatCard
-                icon={<CircleCheck size={22} color={colors.primary} />}
+                icon={
+                  <CircleCheck size={16} color="#FFFFFF" strokeWidth={2.4} />
+                }
+                iconBg={colors.primary}
                 value={String(overview.totalCheckins)}
-                label="Total check-ins"
+                label="Total completed"
               />
             </View>
 
             <SectionLabel>LAST 7 DAYS</SectionLabel>
-            <View style={[styles.card, { backgroundColor: colors.card }]}>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
               <WeekBars cells={week} />
             </View>
 
             <SectionLabel>LAST 12 MONTHS</SectionLabel>
-            <View style={[styles.card, { backgroundColor: colors.card }]}>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
               <HeatMap
                 cells={cells}
                 levelColors={levelColors}
@@ -109,7 +133,7 @@ export function AnalyticsScreen() {
             </View>
 
             <Text style={[styles.hint, { color: colors.textSecondary }]}>
-              Tap a habit on Today or Habits to see its own statistics.
+              Tap any habit to inspect detailed statistics and history.
             </Text>
           </>
         )}
@@ -119,7 +143,21 @@ export function AnalyticsScreen() {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  card: { borderRadius: 16, padding: 16 },
-  hint: { textAlign: 'center', marginTop: 24, fontSize: 13 },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    alignItems: 'center',
+  },
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+  },
+  hint: {
+    textAlign: 'center',
+    marginTop: 18,
+    fontSize: 12,
+    fontWeight: '500',
+  },
 });

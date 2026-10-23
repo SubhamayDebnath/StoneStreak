@@ -29,6 +29,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/Screen';
 import { SectionLabel } from '@/components/SectionLabel';
 import { SettingsRow } from '@/components/SettingsRow';
@@ -40,9 +41,9 @@ import { requestReminderPermission } from '@/lib/notifications';
 import { useHabitStore } from '@/store/habitStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { ThemeMode } from '@/store/themeStore';
+import { showToast } from '@/lib/toast';
 
 const BACKUP_PREFIX = 'stonestreak-backup-';
-/** A real backup is a few KB. This only stops a wrong, huge file from freezing the app. */
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
 
 const THEME_OPTIONS: { value: ThemeMode; label: string; Icon: typeof Sun }[] = [
@@ -51,12 +52,6 @@ const THEME_OPTIONS: { value: ThemeMode; label: string; Icon: typeof Sun }[] = [
   { value: 'dark', label: 'Dark', Icon: Moon },
 ];
 
-/**
- * Reads a file returned by the document picker.
- * The new `File.text()` API can reject picker files on Android with
- * "Missing 'READ' permission", so we use the legacy reader first and
- * fall back to fetch() if that also fails.
- */
 async function readPickedFile(uri: string): Promise<string> {
   try {
     return await LegacyFS.readAsStringAsync(uri);
@@ -69,6 +64,7 @@ async function readPickedFile(uri: string): Promise<string> {
 export function SettingsScreen() {
   const { colors, mode, setMode } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const habits = useHabitStore((s) => s.habits);
   const archived = useHabitStore((s) => s.archived);
@@ -95,7 +91,8 @@ export function SettingsScreen() {
   /* ---------- haptics ---------- */
   const onToggleHaptics = (value: boolean) => {
     setHapticsEnabled(value);
-    if (value) haptics.light(); // let the user feel it right away
+    if (value) haptics.light();
+    showToast(value ? 'Haptics enabled' : 'Haptics disabled');
   };
 
   /* ---------- reminders ---------- */
@@ -103,6 +100,7 @@ export function SettingsScreen() {
     if (!value) {
       haptics.light();
       setRemindersEnabled(false);
+      showToast('Reminders paused');
       return;
     }
 
@@ -120,6 +118,7 @@ export function SettingsScreen() {
     }
     haptics.light();
     setRemindersEnabled(true);
+    showToast('Reminders enabled');
   };
 
   /* ---------- export ---------- */
@@ -132,19 +131,16 @@ export function SettingsScreen() {
         return;
       }
 
-      // Remove backups left in the cache by earlier exports.
-      // The new file is created below, so the one being shared is never deleted.
       for (const item of Paths.cache.list()) {
         if (item instanceof File && item.name.startsWith(BACKUP_PREFIX)) {
           try {
             item.delete();
           } catch {
-            // an old file that is still in use; ignore
+            // ignore
           }
         }
       }
 
-      // Archived habits are part of the backup too
       const backup = buildBackup([...habits, ...archived], getCompletionList());
       const stamp = new Date().toISOString().slice(0, 10);
       const file = new File(Paths.cache, `${BACKUP_PREFIX}${stamp}.json`);
@@ -157,6 +153,7 @@ export function SettingsScreen() {
         dialogTitle: 'Export StoneStreak data',
       });
       haptics.success();
+      showToast('Backup file generated');
     } catch (e) {
       Alert.alert('Export failed', errorMessage(e));
     } finally {
@@ -184,7 +181,6 @@ export function SettingsScreen() {
         return;
       }
 
-      // FIX: was `await new File(asset.uri).text()`, which Android rejects
       const text = await readPickedFile(asset.uri);
       const { habits: newHabits, completions } = parseBackup(text);
 
@@ -209,7 +205,7 @@ export function SettingsScreen() {
               try {
                 await replaceAll(newHabits, completions);
                 haptics.success();
-                Alert.alert('Import complete', 'Your data has been restored.');
+                showToast('Data imported successfully');
               } catch (e) {
                 Alert.alert('Import failed', errorMessage(e));
               } finally {
@@ -232,7 +228,7 @@ export function SettingsScreen() {
     haptics.warning();
     Alert.alert(
       'Delete all data?',
-      'All habits (including archived ones) and history will be permanently removed. Export a backup first if you want to keep them.',
+      'All habits, streaks, and tracking history will be permanently removed.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -243,6 +239,7 @@ export function SettingsScreen() {
             try {
               await clearAll();
               haptics.heavy();
+              showToast('All data erased');
             } catch (e) {
               Alert.alert('Delete failed', errorMessage(e));
             } finally {
@@ -257,19 +254,23 @@ export function SettingsScreen() {
   return (
     <Screen
       title="Settings"
-      // In the header so showing it never pushes the list down
       right={busy ? <ActivityIndicator color={colors.primary} /> : undefined}
     >
       <ScrollView
         contentContainerStyle={{
           padding: 16,
-          paddingTop: 0,
-          paddingBottom: 32,
+          paddingTop: 4,
+          paddingBottom: insets.bottom + 110,
         }}
       >
         {/* Appearance */}
-        <SectionLabel>APPEARANCE</SectionLabel>
-        <View style={[styles.segment, { backgroundColor: colors.card }]}>
+        <SectionLabel first>APPEARANCE</SectionLabel>
+        <View
+          style={[
+            styles.segment,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           {THEME_OPTIONS.map(({ value, label, Icon }) => {
             const active = mode === value;
             return (
@@ -284,14 +285,12 @@ export function SettingsScreen() {
                   active && { backgroundColor: colors.primary },
                 ]}
               >
-                <Icon
-                  size={18}
-                  color={active ? colors.onPrimary : colors.text}
-                />
+                <Icon size={16} color={active ? '#FFFFFF' : colors.text} />
                 <Text
                   style={{
-                    color: active ? colors.onPrimary : colors.text,
+                    color: active ? '#FFFFFF' : colors.text,
                     fontWeight: '600',
+                    fontSize: 13,
                   }}
                 >
                   {label}
@@ -303,9 +302,15 @@ export function SettingsScreen() {
 
         {/* Preferences */}
         <SectionLabel>PREFERENCES</SectionLabel>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <SettingsRow
-            icon={<Bell size={20} color={colors.primary} />}
+            icon={<Bell size={18} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg={colors.primary}
             title="Reminders"
             subtitle={
               remindersEnabled
@@ -323,7 +328,8 @@ export function SettingsScreen() {
             divider
           />
           <SettingsRow
-            icon={<Vibrate size={20} color={colors.primary} />}
+            icon={<Vibrate size={18} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg="#8B5CF6"
             title="Haptic feedback"
             subtitle="Vibrate when you tap, complete or reorder"
             right={
@@ -339,9 +345,15 @@ export function SettingsScreen() {
 
         {/* Data */}
         <SectionLabel>YOUR DATA</SectionLabel>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <SettingsRow
-            icon={<Archive size={20} color={colors.primary} />}
+            icon={<Archive size={18} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg="#64748B"
             title="Archived habits"
             subtitle={
               archived.length === 0
@@ -349,11 +361,12 @@ export function SettingsScreen() {
                 : `${plural(archived.length, 'habit')} hidden, history kept`
             }
             onPress={() => router.push('/archived')}
-            right={<ChevronRight size={20} color={colors.textSecondary} />}
+            right={<ChevronRight size={18} color={colors.textSecondary} />}
             divider
           />
           <SettingsRow
-            icon={<Download size={20} color={colors.primary} />}
+            icon={<Download size={18} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg="#10B981"
             title="Export data"
             subtitle={`${plural(totalHabits, 'habit')} · save a backup file`}
             onPress={onExport}
@@ -361,7 +374,8 @@ export function SettingsScreen() {
             divider
           />
           <SettingsRow
-            icon={<Upload size={20} color={colors.primary} />}
+            icon={<Upload size={18} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg="#F59E0B"
             title="Import data"
             subtitle="Restore from a backup file"
             onPress={onImport}
@@ -371,9 +385,15 @@ export function SettingsScreen() {
 
         {/* Danger */}
         <SectionLabel>DANGER ZONE</SectionLabel>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <SettingsRow
-            icon={<Trash2 size={20} color={colors.danger} />}
+            icon={<Trash2 size={18} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg={colors.danger}
             title="Delete all data"
             subtitle="Remove every habit and its history"
             onPress={onDeleteAll}
@@ -384,13 +404,19 @@ export function SettingsScreen() {
 
         {/* About */}
         <SectionLabel>ABOUT</SectionLabel>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <SettingsRow
-            icon={<Info size={20} color={colors.textSecondary} />}
+            icon={<Info size={18} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg="#71717A"
             title="StoneStreak"
-            subtitle="All data is stored on this device"
+            subtitle="All data is stored offline on this device"
             right={
-              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
                 v{version}
               </Text>
             }
@@ -402,15 +428,24 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  segment: { flexDirection: 'row', borderRadius: 16, padding: 4 },
+  segment: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 3,
+  },
   segmentItem: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 11,
   },
-  card: { borderRadius: 16, overflow: 'hidden' },
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
 });

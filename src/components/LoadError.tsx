@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 12,
   },
-  title: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
+  title: { fontSize: 22, fontWeight: '600', textAlign: 'center' },
   text: { fontSize: 15, lineHeight: 22, textAlign: 'center' },
   button: {
     marginTop: 12,
@@ -48,5 +48,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 28,
   },
-  buttonText: { fontSize: 16, fontWeight: '700' },
+  buttonText: { fontSize: 16, fontWeight: '600' },
 });

@@ -1,4 +1,5 @@
 import {
+  Activity,
   Apple,
   BedDouble,
   Bike,
@@ -6,10 +7,12 @@ import {
   Brain,
   Calculator,
   Car,
+  Clock,
   Code,
   Coffee,
   Droplets,
   Dumbbell,
+  Flame,
   Footprints,
   Gamepad2,
   GraduationCap,
@@ -24,11 +27,14 @@ import {
   ShowerHead,
   Smile,
   Sparkles,
+  Sprout,
   Sun,
+  Target,
   Trees,
   Tv,
   Utensils,
   Wallet,
+  Zap,
 } from 'lucide-react-native';
 
 export interface HabitIconDef {
@@ -37,58 +43,70 @@ export interface HabitIconDef {
   Icon: LucideIcon;
 }
 
-/** `name` is what gets saved in the database. Never rename existing names. */
+/**
+ * 30 curated daily habit icons arranged in 5 balanced rows of 6.
+ * `name` is what gets saved in the database. Never rename existing names.
+ */
 export const HABIT_ICONS: HabitIconDef[] = [
-  // Daily life
+  // Row 1: Daily life & nourishment
   { name: 'water', label: 'Drink water', Icon: Droplets },
   { name: 'coffee', label: 'Tea / Coffee', Icon: Coffee },
   { name: 'cook', label: 'Eat / Cook', Icon: Utensils },
   { name: 'food', label: 'Healthy food', Icon: Apple },
   { name: 'wake', label: 'Wake early', Icon: Sun },
-  { name: 'sleep', label: 'Sleep', Icon: BedDouble },
-  { name: 'shower', label: 'Shower', Icon: ShowerHead },
-  { name: 'clean', label: 'Clean', Icon: Sparkles },
+  { name: 'sleep', label: 'Sleep well', Icon: BedDouble },
 
-  // Body
-  { name: 'workout', label: 'Gym', Icon: Dumbbell },
-  { name: 'walk', label: 'Walking', Icon: Footprints },
-  { name: 'cycle', label: 'Cycle', Icon: Bike },
-  { name: 'outdoors', label: 'Outdoors', Icon: Trees },
-  { name: 'medicine', label: 'Medicine', Icon: Pill },
+  // Row 2: Fitness & Health
+  { name: 'workout', label: 'Gym / Workout', Icon: Dumbbell },
+  { name: 'run', label: 'Running / Cardio', Icon: Flame },
+  { name: 'walk', label: 'Walking / Steps', Icon: Footprints },
+  { name: 'activity', label: 'Yoga / Stretch', Icon: Activity },
+  { name: 'cycle', label: 'Cycling', Icon: Bike },
+  { name: 'medicine', label: 'Vitamins / Meds', Icon: Pill },
 
-  // Mind and study
-  { name: 'study', label: 'Study', Icon: GraduationCap },
-  { name: 'math', label: 'Math', Icon: Calculator },
-  { name: 'language', label: 'English', Icon: Languages },
-  { name: 'reasoning', label: 'Reasoning', Icon: Puzzle },
-  { name: 'code', label: 'Coding', Icon: Code },
-  { name: 'read', label: 'Read', Icon: BookOpen },
-  { name: 'journal', label: 'Journal', Icon: Pencil },
-  { name: 'meditate', label: 'Meditate', Icon: Brain },
-  { name: 'gratitude', label: 'Gratitude', Icon: Smile },
+  // Row 3: Mindfulness & Self-care
+  { name: 'meditate', label: 'Meditation', Icon: Brain },
   { name: 'selfcare', label: 'Self-care', Icon: Heart },
+  { name: 'gratitude', label: 'Gratitude / Mood', Icon: Smile },
+  { name: 'shower', label: 'Hygiene / Shower', Icon: ShowerHead },
+  { name: 'clean', label: 'Clean / Tidy', Icon: Sparkles },
+  { name: 'outdoors', label: 'Outdoors / Nature', Icon: Trees },
 
-  // Fun and life
-  { name: 'gaming', label: 'Gaming', Icon: Gamepad2 },
-  { name: 'watch', label: 'TV', Icon: Tv },
-  { name: 'music', label: 'Music', Icon: Music },
-  { name: 'chat', label: 'Communication', Icon: MessageCircle },
-  { name: 'drive', label: 'Driving', Icon: Car },
+  // Row 4: Focus & Learning
+  { name: 'focus', label: 'Deep work / Focus', Icon: Target },
+  { name: 'timer', label: 'Routine / Pomodoro', Icon: Clock },
+  { name: 'energy', label: 'Energy boost', Icon: Zap },
+  { name: 'read', label: 'Read books', Icon: BookOpen },
+  { name: 'journal', label: 'Journal / Write', Icon: Pencil },
+  { name: 'study', label: 'Study / Learn', Icon: GraduationCap },
+
+  // Row 5: Skills & Life
+  { name: 'code', label: 'Coding / Build', Icon: Code },
+  { name: 'language', label: 'Languages', Icon: Languages },
+  { name: 'reasoning', label: 'Brain puzzles', Icon: Puzzle },
+  { name: 'music', label: 'Music / Practice', Icon: Music },
+  { name: 'nature', label: 'Plants / Garden', Icon: Sprout },
   { name: 'money', label: 'Save money', Icon: Wallet },
 ];
 
 export const DEFAULT_HABIT_ICON = 'water';
 
-const ICON_COMPONENTS: Record<string, LucideIcon> = Object.fromEntries(
-  HABIT_ICONS.map((i) => [i.name, i.Icon]),
-);
+const ALL_ICON_MAP: Record<string, LucideIcon> = {
+  ...Object.fromEntries(HABIT_ICONS.map((i) => [i.name, i.Icon])),
+  // Legacy mappings for backward compatibility so older backups/habits continue to render:
+  math: Calculator,
+  drive: Car,
+  gaming: Gamepad2,
+  chat: MessageCircle,
+  watch: Tv,
+};
 
 /** Makes sure an unknown value (e.g. from an old backup) becomes a valid icon name. */
 export function normalizeIcon(name: unknown): string {
-  return typeof name === 'string' && name in ICON_COMPONENTS
+  return typeof name === 'string' && name in ALL_ICON_MAP
     ? name
     : DEFAULT_HABIT_ICON;
 }
 
 /** Icon components by saved name. Use with normalizeIcon() so the key always exists. */
-export const HABIT_ICON_COMPONENTS = ICON_COMPONENTS;
+export const HABIT_ICON_COMPONENTS = ALL_ICON_MAP;

@@ -5,47 +5,44 @@ import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SectionLabel } from '@/components/SectionLabel';
 import { useTheme } from '@/hooks/useTheme';
-import { toDateKey } from '@/lib/date';
+import { isScheduledOn, toDateKey } from '@/lib/date';
 import { errorMessage } from '@/lib/format';
 import { haptics } from '@/lib/haptics';
-import { isComplete } from '@/lib/tracking';
 import { useHabitStore } from '@/store/habitStore';
 import { Habit } from '@/types';
 
 const NOTE_BEFORE_CREATED =
-  "This is before you created this habit. It will be saved, but it won't count toward your streak or heat map.";
+  'This date is before the habit was created. You can still log it, and it will count towards your stats.';
 const NOTE_NOT_SCHEDULED =
-  "This habit isn't scheduled on this weekday. It will be saved, but it won't count toward your streak.";
+  'This habit is not scheduled for this day of the week. Logging it will still count.';
 
 export function LogPastDay({ habit }: { habit: Habit }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [picked, setPicked] = useState<Date | null>(null);
 
-  const dateKey = picked ? toDateKey(picked) : '';
-  const count = useHabitStore((s) => s.counts[`${habit.id}|${dateKey}`] ?? 0);
-  const changeCount = useHabitStore((s) => s.changeCount);
+  const doneMap = useHabitStore((s) => s.done);
+  const counts = useHabitStore((s) => s.counts);
   const toggleCompletion = useHabitStore((s) => s.toggleCompletion);
+  const changeCount = useHabitStore((s) => s.changeCount);
 
   const isCount = habit.trackingType === 'count';
-  const complete = isComplete(habit, count);
+  const dateKey = picked ? toDateKey(picked) : '';
+  const compositeKey = `${habit.id}|${dateKey}`;
+  const complete = !!doneMap[compositeKey];
+  const count = counts[compositeKey] ?? 0;
 
-  // 0 = Sunday ... 6 = Saturday (same as the reminder scheduling)
-  const notScheduled =
-    !!picked &&
-    habit.scheduleType === 'weekdays' &&
-    !habit.weekdays.includes(picked.getDay() as Habit['weekdays'][number]);
-
-  // Streaks and the heat map start on the day the habit was created
-  const beforeCreated =
-    !!picked && dateKey < toDateKey(new Date(habit.createdAt));
+  const createdKey = habit.createdAt.slice(0, 10);
+  const beforeCreated = picked ? dateKey < createdKey : false;
+  const notScheduled = picked ? !isScheduledOn(habit, picked) : false;
 
   const openPicker = () => {
     haptics.light();
-    const min = new Date();
+    const min = new Date(habit.createdAt);
     min.setFullYear(min.getFullYear() - 1);
+
     DateTimePickerAndroid.open({
-      value: picked ?? new Date(),
+      value: new Date(),
       mode: 'date',
       minimumDate: min,
       maximumDate: new Date(),
@@ -73,9 +70,15 @@ export function LogPastDay({ habit }: { habit: Habit }) {
       <SectionLabel>MISSED A DAY?</SectionLabel>
       <Pressable
         onPress={openPicker}
-        style={[styles.button, { backgroundColor: colors.card }]}
+        style={[
+          styles.button,
+          {
+            backgroundColor: colors.cardSubtle,
+            borderColor: colors.border,
+          },
+        ]}
       >
-        <CalendarPlus size={20} color={colors.primary} />
+        <CalendarPlus size={20} color={colors.primary} strokeWidth={2.2} />
         <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>
           Log a past day
         </Text>
@@ -124,8 +127,10 @@ export function LogPastDay({ habit }: { habit: Habit }) {
                 style={[
                   styles.round,
                   {
-                    backgroundColor: colors.background,
-                    opacity: count === 0 ? 0.4 : 1,
+                    backgroundColor: colors.cardSubtle,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                    opacity: count === 0 ? 0.35 : 1,
                   },
                 ]}
               >
@@ -146,9 +151,16 @@ export function LogPastDay({ habit }: { habit: Habit }) {
                   haptics.light();
                   run(changeCount(habit.id, dateKey, 1));
                 }}
-                style={[styles.round, { backgroundColor: habit.color }]}
+                style={[
+                  styles.round,
+                  {
+                    backgroundColor: colors.cardSubtle,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                  },
+                ]}
               >
-                <Plus size={22} color="#FFFFFF" />
+                <Plus size={22} color={colors.text} />
               </Pressable>
             </View>
           ) : (
@@ -160,8 +172,9 @@ export function LogPastDay({ habit }: { habit: Habit }) {
               style={[
                 styles.check,
                 {
-                  backgroundColor: complete ? habit.color : colors.background,
-                  borderColor: complete ? habit.color : colors.border,
+                  backgroundColor: complete ? habit.color : colors.cardSubtle,
+                  borderColor: colors.border,
+                  borderWidth: 1,
                 },
               ]}
             >
@@ -173,7 +186,7 @@ export function LogPastDay({ habit }: { habit: Habit }) {
                 style={{
                   color: complete ? '#FFFFFF' : colors.text,
                   fontSize: 16,
-                  fontWeight: '700',
+                  fontWeight: '600',
                 }}
               >
                 {complete ? 'Done (tap to undo)' : 'Mark as done'}
@@ -193,7 +206,7 @@ export function LogPastDay({ habit }: { habit: Habit }) {
               style={{
                 color: colors.onPrimary,
                 fontSize: 16,
-                fontWeight: '700',
+                fontWeight: '600',
               }}
             >
               Done
@@ -212,6 +225,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     borderRadius: 14,
+    borderWidth: 1,
     paddingVertical: 15,
   },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
@@ -220,7 +234,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 20,
   },
-  title: { fontSize: 20, fontWeight: '800' },
+  title: { fontSize: 20, fontWeight: '600' },
   note: { fontSize: 13, marginTop: 12, lineHeight: 18 },
   counter: {
     flexDirection: 'row',
@@ -237,13 +251,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   countBox: { alignItems: 'center', minWidth: 72 },
-  countText: { fontSize: 40, fontWeight: '800' },
+  countText: { fontSize: 40, fontWeight: '600' },
   check: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    borderWidth: 1,
     borderRadius: 14,
     paddingVertical: 16,
     marginVertical: 24,

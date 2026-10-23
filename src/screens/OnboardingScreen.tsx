@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 26, fontWeight: '800', textAlign: 'center' },
+  title: { fontSize: 26, fontWeight: '600', textAlign: 'center' },
   text: { fontSize: 16, lineHeight: 23, textAlign: 'center', marginTop: 12 },
   bottom: { paddingTop: 8 },
   dots: {
@@ -193,5 +193,5 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
-  buttonText: { fontSize: 17, fontWeight: '700' },
+  buttonText: { fontSize: 17, fontWeight: '600' },
 });

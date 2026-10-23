@@ -7,7 +7,7 @@ interface Props {
   size?: number;
 }
 
-/** Round colored bubble with the habit icon inside. */
+/** Round solid colored bubble with a crisp white icon inside. */
 export function HabitIcon({ name, color, size = 44 }: Props) {
   const Icon = HABIT_ICON_COMPONENTS[normalizeIcon(name)];
 
@@ -18,16 +18,21 @@ export function HabitIcon({ name, color, size = 44 }: Props) {
         {
           width: size,
           height: size,
-          borderRadius: size * 0.32,
-          backgroundColor: color + '26', // ~15% opacity of the habit color
+          borderRadius: Math.round(size * 0.32),
+          backgroundColor: color,
+          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0.18)',
         },
       ]}
     >
-      <Icon size={size * 0.5} color={color} />
+      <Icon size={Math.round(size * 0.52)} color="#FFFFFF" strokeWidth={2.4} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bubble: { alignItems: 'center', justifyContent: 'center' },
+  bubble: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

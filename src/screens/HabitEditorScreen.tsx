@@ -30,6 +30,7 @@ import { errorMessage } from '@/lib/format';
 import { haptics } from '@/lib/haptics';
 import { DEFAULT_HABIT_ICON, HABIT_ICONS } from '@/lib/habitIcons';
 import { useHabitStore } from '@/store/habitStore';
+import { showToast } from '@/lib/toast';
 import { habitPalette } from '@/theme';
 import { ScheduleType, TrackingType, Weekday } from '@/types';
 
@@ -109,7 +110,6 @@ export function HabitEditorScreen() {
     (scheduleType === 'daily' || weekdays.length > 0) &&
     (trackingType === 'check' || targetValid);
 
-  // Has the person typed or changed anything worth keeping?
   const isDirty =
     isEdit && existing
       ? name.trim() !== existing.name ||
@@ -126,11 +126,8 @@ export function HabitEditorScreen() {
         (reminderOn && time !== existing.reminderTime)
       : name.trim() !== '' || description.trim() !== '';
 
-  // Set just before we leave on purpose (after saving, or after "Discard")
   const allowLeave = useRef(false);
 
-  // Ask before throwing away changes (header Close, swipe and the Android back button).
-  // The listener is removed again by the cleanup function when this screen closes.
   useEffect(() => {
     return navigation.addListener('beforeRemove', (e) => {
       if (allowLeave.current || !isDirty) return;
@@ -173,8 +170,13 @@ export function HabitEditorScreen() {
         weekdays: scheduleType === 'weekdays' ? weekdays : [],
         reminderTime: reminderOn ? time : null,
       };
-      if (isEdit && existing) await editHabit(existing.id, data);
-      else await addHabit(data);
+      if (isEdit && existing) {
+        await editHabit(existing.id, data);
+        showToast('Habit updated');
+      } else {
+        await addHabit(data);
+        showToast('Habit created');
+      }
       haptics.success();
       allowLeave.current = true;
       router.back();
@@ -189,14 +191,14 @@ export function HabitEditorScreen() {
     <>
       <Stack.Screen
         options={{
-          title: isEdit ? 'Edit habit' : 'New habit',
-          headerBackVisible: false,
+          title: isEdit ? 'Edit Habit' : 'New Habit',
+          headerTitleStyle: { fontSize: 17, fontWeight: '600' },
           headerLeft: () => (
             <Pressable onPress={onClose} hitSlop={10}>
               <Text
-                style={{ color: colors.text, fontSize: 16, fontWeight: '700' }}
+                style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}
               >
-                Close
+                Cancel
               </Text>
             </Pressable>
           ),
@@ -205,15 +207,16 @@ export function HabitEditorScreen() {
               onPress={onSave}
               disabled={!canSave || saving}
               hitSlop={10}
+              style={{ opacity: canSave && !saving ? 1 : 0.4 }}
             >
               <Text
                 style={{
-                  color: canSave ? colors.primary : colors.textSecondary,
-                  fontSize: 16,
-                  fontWeight: '700',
+                  color: colors.primary,
+                  fontSize: 15,
+                  fontWeight: '600',
                 }}
               >
-                Save
+                {saving ? 'Saving…' : 'Save'}
               </Text>
             </Pressable>
           ),
@@ -225,7 +228,7 @@ export function HabitEditorScreen() {
         style={{ backgroundColor: colors.background }}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 48 },
         ]}
       >
         {/* Name */}
@@ -233,7 +236,7 @@ export function HabitEditorScreen() {
         <TextInput
           value={name}
           onChangeText={setName}
-          placeholder="e.g. Drink water"
+          placeholder="e.g. Read books"
           placeholderTextColor={colors.textSecondary}
           maxLength={60}
           autoFocus={!isEdit}
@@ -271,7 +274,12 @@ export function HabitEditorScreen() {
 
         {/* Type */}
         <SectionLabel>TYPE</SectionLabel>
-        <View style={[styles.segment, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.segment,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           {(['check', 'count'] as TrackingType[]).map((t) => {
             const active = trackingType === t;
             const textColor = active ? colors.onPrimary : colors.text;
@@ -289,11 +297,13 @@ export function HabitEditorScreen() {
                 ]}
               >
                 {t === 'check' ? (
-                  <Check size={16} color={textColor} strokeWidth={3} />
+                  <Check size={15} color={textColor} strokeWidth={3} />
                 ) : (
-                  <Hash size={16} color={textColor} strokeWidth={3} />
+                  <Hash size={15} color={textColor} strokeWidth={3} />
                 )}
-                <Text style={{ color: textColor, fontWeight: '600' }}>
+                <Text
+                  style={{ color: textColor, fontWeight: '600', fontSize: 14 }}
+                >
                   {t === 'check' ? 'Checkbox' : 'Count'}
                 </Text>
               </Pressable>
@@ -303,7 +313,7 @@ export function HabitEditorScreen() {
         <Text style={[styles.hint, { color: colors.textSecondary }]}>
           {trackingType === 'check'
             ? 'Mark it done once a day.'
-            : 'Count up to a daily goal, like 8 glasses of water. You can go above the goal.'}
+            : 'Count up to a daily goal, like 8 glasses of water.'}
         </Text>
 
         {/* Daily goal (count only) */}
@@ -312,20 +322,28 @@ export function HabitEditorScreen() {
             style={[
               styles.card,
               styles.goalCard,
-              { backgroundColor: colors.card },
+              { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
             <View style={styles.cardRow}>
-              <Text style={{ color: colors.text, fontSize: 16 }}>
+              <Text
+                style={{ color: colors.text, fontSize: 14, fontWeight: '600' }}
+              >
                 Daily goal
               </Text>
               <View style={styles.stepper}>
                 <Pressable
                   onPress={() => stepTarget(-1)}
                   hitSlop={8}
-                  style={[styles.stepBtn, { borderColor: colors.border }]}
+                  style={[
+                    styles.stepBtn,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.cardSubtle,
+                    },
+                  ]}
                 >
-                  <Minus size={18} color={colors.text} />
+                  <Minus size={16} color={colors.text} strokeWidth={2.5} />
                 </Pressable>
                 <TextInput
                   value={targetText}
@@ -346,9 +364,15 @@ export function HabitEditorScreen() {
                 <Pressable
                   onPress={() => stepTarget(1)}
                   hitSlop={8}
-                  style={[styles.stepBtn, { borderColor: colors.border }]}
+                  style={[
+                    styles.stepBtn,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.cardSubtle,
+                    },
+                  ]}
                 >
-                  <Plus size={18} color={colors.text} />
+                  <Plus size={16} color={colors.text} strokeWidth={2.5} />
                 </Pressable>
               </View>
             </View>
@@ -361,26 +385,28 @@ export function HabitEditorScreen() {
           {HABIT_ICONS.map(({ name: iconName, label, Icon }) => {
             const active = icon === iconName;
             return (
-              <Pressable
-                key={iconName}
-                onPress={() => {
-                  haptics.light();
-                  setIcon(iconName);
-                }}
-                accessibilityLabel={label}
-                style={[
-                  styles.iconBtn,
-                  {
-                    backgroundColor: active ? color : colors.card,
-                    borderColor: active ? color : colors.border,
-                  },
-                ]}
-              >
-                <Icon
-                  size={22}
-                  color={active ? '#FFFFFF' : colors.textSecondary}
-                />
-              </Pressable>
+              <View key={iconName} style={styles.iconCell}>
+                <Pressable
+                  onPress={() => {
+                    haptics.light();
+                    setIcon(iconName);
+                  }}
+                  accessibilityLabel={label}
+                  style={[
+                    styles.iconBtn,
+                    {
+                      backgroundColor: active ? color : colors.card,
+                      borderColor: active ? color : colors.border,
+                    },
+                  ]}
+                >
+                  <Icon
+                    size={20}
+                    color={active ? '#FFFFFF' : colors.textSecondary}
+                    strokeWidth={2.4}
+                  />
+                </Pressable>
+              </View>
             );
           })}
         </View>
@@ -389,24 +415,33 @@ export function HabitEditorScreen() {
         <SectionLabel>COLOR</SectionLabel>
         <View style={styles.colors}>
           {habitPalette.map((c) => (
-            <Pressable
-              key={c}
-              onPress={() => {
-                haptics.light();
-                setColor(c);
-              }}
-              style={[styles.swatch, { backgroundColor: c }]}
-            >
-              {color === c && (
-                <Check size={18} color="#FFFFFF" strokeWidth={3} />
-              )}
-            </Pressable>
+            <View key={c} style={styles.colorCell}>
+              <Pressable
+                onPress={() => {
+                  haptics.light();
+                  setColor(c);
+                }}
+                style={[
+                  styles.swatch,
+                  { backgroundColor: c, borderColor: colors.border },
+                ]}
+              >
+                {color === c && (
+                  <Check size={16} color="#FFFFFF" strokeWidth={3} />
+                )}
+              </Pressable>
+            </View>
           ))}
         </View>
 
         {/* Schedule */}
         <SectionLabel>REPEAT</SectionLabel>
-        <View style={[styles.segment, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.segment,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           {(['daily', 'weekdays'] as ScheduleType[]).map((t) => {
             const active = scheduleType === t;
             return (
@@ -425,6 +460,7 @@ export function HabitEditorScreen() {
                   style={{
                     color: active ? colors.onPrimary : colors.text,
                     fontWeight: '600',
+                    fontSize: 14,
                   }}
                 >
                   {t === 'daily' ? 'Every day' : 'Selected days'}
@@ -454,7 +490,8 @@ export function HabitEditorScreen() {
                   <Text
                     style={{
                       color: active ? '#FFFFFF' : colors.text,
-                      fontWeight: '700',
+                      fontWeight: '600',
+                      fontSize: 12,
                     }}
                   >
                     {WEEKDAY_SHORT[d]}
@@ -467,11 +504,18 @@ export function HabitEditorScreen() {
 
         {/* Reminder */}
         <SectionLabel>REMINDER</SectionLabel>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <View style={styles.cardRow}>
             <View style={styles.inline}>
-              <Bell size={18} color={colors.text} />
-              <Text style={{ color: colors.text, fontSize: 16 }}>
+              <Bell size={16} color={colors.text} />
+              <Text
+                style={{ color: colors.text, fontSize: 14, fontWeight: '600' }}
+              >
                 Remind me
               </Text>
             </View>
@@ -495,14 +539,14 @@ export function HabitEditorScreen() {
                 { borderTopColor: colors.border },
               ]}
             >
-              <Text style={{ color: colors.textSecondary, fontSize: 16 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
                 Time
               </Text>
               <Text
                 style={{
                   color: colors.primary,
-                  fontSize: 18,
-                  fontWeight: '700',
+                  fontSize: 16,
+                  fontWeight: '600',
                 }}
               >
                 {formatTime(time)}
@@ -520,75 +564,105 @@ const styles = StyleSheet.create({
   hint: { fontSize: 13, marginTop: 8, lineHeight: 18 },
   input: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 17,
+    paddingVertical: 12,
+    fontSize: 14,
   },
-  multiline: { minHeight: 84, fontSize: 16 },
-  icons: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  multiline: { minHeight: 76, fontSize: 15 },
+  icons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+  },
+  iconCell: {
+    width: '16.666%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
   iconBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  colors: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  colors: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+  },
+  colorCell: {
+    width: '14.285%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 5,
+  },
   swatch: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  segment: { flexDirection: 'row', borderRadius: 14, padding: 4 },
+  segment: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 3,
+  },
   segmentItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 9,
+    borderRadius: 9,
   },
   segmentRow: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
   goalCard: { marginTop: 12 },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   stepBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   targetInput: {
-    minWidth: 64,
+    minWidth: 54,
     textAlign: 'center',
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     borderBottomWidth: 1,
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
   days: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 14,
+    marginTop: 12,
   },
   day: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  card: { borderRadius: 14, paddingHorizontal: 14 },
+  card: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+  },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 11,
   },
   timeRow: { borderTopWidth: StyleSheet.hairlineWidth },
-  inline: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  inline: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

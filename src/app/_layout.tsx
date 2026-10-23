@@ -56,12 +56,11 @@ export default function RootLayout() {
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
           headerShadowVisible: false,
-          // One header look for every screen
           headerTitleAlign: 'center',
           headerTitleStyle: {
             color: colors.text,
-            fontSize: 20,
-            fontWeight: '800',
+            fontSize: 18,
+            fontWeight: '600',
           },
           contentStyle: { backgroundColor: colors.background },
         }}

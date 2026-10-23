@@ -34,6 +34,7 @@ import { formatTime, fromDateKey, scheduleLabel } from '@/lib/date';
 import { errorMessage, plural } from '@/lib/format';
 import { haptics } from '@/lib/haptics';
 import { useHabitStore } from '@/store/habitStore';
+import { showToast } from '@/lib/toast';
 import { useTodayStore } from '@/store/todayStore';
 import { HeatCell } from '@/types';
 
@@ -61,7 +62,6 @@ export function HabitDetailScreen() {
     [habit, done, counts, today],
   );
 
-  // Once the habit is deleted or archived (or the id is unknown), leave this page
   useEffect(() => {
     if (habit) return;
     if (router.canGoBack()) router.back();
@@ -87,15 +87,15 @@ export function HabitDetailScreen() {
         ? `${count} of ${habit.target} (goal beaten)`
         : `${count} of ${habit.target}`;
     }
-    if (cell.done > 0) return 'Done';
-    return cell.date === todayKey ? 'Not done yet' : 'Missed';
+    if (cell.done > 0) return 'Completed';
+    return cell.date === todayKey ? 'Pending today' : 'Missed';
   };
 
   const onArchive = () => {
     haptics.light();
     Alert.alert(
       'Archive habit?',
-      `"${habit.name}" will be hidden from Today and Habits, and its reminders stop. Your history is kept. Restore it from Settings > Archived habits.`,
+      `"${habit.name}" will be hidden from Today and Habits. Tracking history is preserved.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -103,8 +103,8 @@ export function HabitDetailScreen() {
           onPress: async () => {
             try {
               haptics.success();
-              // The effect above closes this page once the habit is archived
               await archiveHabit(habit.id);
+              showToast('Habit archived');
             } catch (e) {
               Alert.alert('Could not archive', errorMessage(e));
             }
@@ -118,7 +118,7 @@ export function HabitDetailScreen() {
     haptics.warning();
     Alert.alert(
       'Delete habit?',
-      `"${habit.name}" and its history will be removed.`,
+      `"${habit.name}" and all tracking history will be permanently deleted.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -127,8 +127,8 @@ export function HabitDetailScreen() {
           onPress: async () => {
             try {
               haptics.heavy();
-              // The effect above closes this page once the habit is gone
               await removeHabit(habit.id);
+              showToast('Habit deleted');
             } catch (e) {
               Alert.alert('Could not delete', errorMessage(e));
             }
@@ -145,17 +145,16 @@ export function HabitDetailScreen() {
   };
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack.Screen
         options={{
-          // No title between Close and Edit (the habit name is in the card below)
           title: '',
           headerTitle: '',
           headerBackVisible: false,
           headerLeft: () => (
             <Pressable onPress={onClose} hitSlop={10}>
               <Text
-                style={{ color: colors.text, fontSize: 16, fontWeight: '700' }}
+                style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}
               >
                 Close
               </Text>
@@ -171,8 +170,8 @@ export function HabitDetailScreen() {
               <Text
                 style={{
                   color: colors.primary,
-                  fontSize: 16,
-                  fontWeight: '700',
+                  fontSize: 15,
+                  fontWeight: '600',
                 }}
               >
                 Edit
@@ -186,13 +185,18 @@ export function HabitDetailScreen() {
         style={{ backgroundColor: colors.background }}
         contentContainerStyle={{
           padding: 16,
-          paddingBottom: insets.bottom + 32,
+          paddingBottom: insets.bottom + 48,
         }}
       >
         {/* Header card */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <View style={styles.top}>
-            <HabitIcon name={habit.icon} color={habit.color} size={56} />
+            <HabitIcon name={habit.icon} color={habit.color} size={50} />
             <View style={styles.topText}>
               <Text style={[styles.name, { color: colors.text }]}>
                 {habit.name}
@@ -209,27 +213,27 @@ export function HabitDetailScreen() {
 
           <View style={styles.infoList}>
             <InfoLine
-              icon={<Calendar size={16} color={colors.textSecondary} />}
+              icon={<Calendar size={15} color={colors.textSecondary} />}
               text={scheduleLabel(habit)}
             />
             {habit.reminderTime ? (
               <InfoLine
-                icon={<Bell size={16} color={colors.textSecondary} />}
+                icon={<Bell size={15} color={colors.textSecondary} />}
                 text={`Reminder at ${formatTime(habit.reminderTime)}`}
               />
             ) : null}
             <InfoLine
               icon={
                 isCount ? (
-                  <Hash size={16} color={colors.textSecondary} />
+                  <Hash size={15} color={colors.textSecondary} />
                 ) : (
-                  <Check size={16} color={colors.textSecondary} />
+                  <Check size={15} color={colors.textSecondary} />
                 )
               }
               text={
                 isCount
-                  ? `Count · goal ${habit.target} per day`
-                  : 'Checkbox · once a day'
+                  ? `Count · Goal ${habit.target} per day`
+                  : 'Check-in once a day'
               }
             />
           </View>
@@ -239,34 +243,40 @@ export function HabitDetailScreen() {
         <SectionLabel>STATISTICS</SectionLabel>
         <View style={styles.grid}>
           <StatCard
-            icon={<Flame size={22} color="#F59E0B" />}
+            icon={<Flame size={17} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg={colors.streak}
             value={plural(stats.current, 'day')}
             label="Current streak"
           />
           <StatCard
-            icon={<Trophy size={22} color={colors.primary} />}
+            icon={<Trophy size={17} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg={colors.primary}
             value={plural(stats.best, 'day')}
             label="Best streak"
           />
           <StatCard
-            icon={<Target size={22} color={colors.success} />}
+            icon={<Target size={17} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg={colors.success}
             value={`${stats.rate}%`}
             label="Completion rate"
           />
           <StatCard
-            icon={<CircleCheck size={22} color={colors.primary} />}
+            icon={<CircleCheck size={17} color="#FFFFFF" strokeWidth={2.4} />}
+            iconBg={colors.primary}
             value={String(stats.daysDone)}
             label={isCount ? 'Days goal reached' : 'Total check-ins'}
           />
           {isCount && (
             <>
               <StatCard
-                icon={<Hash size={22} color={habit.color} />}
+                icon={<Hash size={17} color="#FFFFFF" strokeWidth={2.4} />}
+                iconBg={habit.color}
                 value={String(stats.totalCount)}
                 label="Total count"
               />
               <StatCard
-                icon={<Star size={22} color="#F59E0B" />}
+                icon={<Star size={17} color="#FFFFFF" strokeWidth={2.4} />}
+                iconBg="#F59E0B"
                 value={String(stats.bestDay)}
                 label="Best day"
               />
@@ -276,13 +286,23 @@ export function HabitDetailScreen() {
 
         {/* Last 7 days */}
         <SectionLabel>LAST 7 DAYS</SectionLabel>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <WeekBars cells={week} />
         </View>
 
         {/* Heat map */}
         <SectionLabel>LAST 12 MONTHS</SectionLabel>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <HeatMap
             cells={cells}
             levelColors={levelColors}
@@ -297,9 +317,15 @@ export function HabitDetailScreen() {
         {/* Archive */}
         <Pressable
           onPress={onArchive}
-          style={[styles.archive, { backgroundColor: colors.card }]}
+          style={[
+            styles.archive,
+            {
+              backgroundColor: colors.cardSubtle,
+              borderColor: colors.border,
+            },
+          ]}
         >
-          <Archive size={18} color={colors.text} />
+          <Archive size={18} color={colors.text} strokeWidth={2.2} />
           <Text style={[styles.archiveText, { color: colors.text }]}>
             Archive habit
           </Text>
@@ -310,11 +336,11 @@ export function HabitDetailScreen() {
           onPress={onDelete}
           style={[styles.delete, { backgroundColor: colors.dangerSolid }]}
         >
-          <Trash2 size={18} color="#FFFFFF" />
+          <Trash2 size={18} color="#FFFFFF" strokeWidth={2.2} />
           <Text style={styles.deleteText}>Delete habit</Text>
         </Pressable>
       </ScrollView>
-    </>
+    </View>
   );
 }
 
@@ -323,30 +349,40 @@ function InfoLine({ icon, text }: { icon: ReactNode; text: string }) {
   return (
     <View style={styles.infoLine}>
       {icon}
-      <Text style={{ color: colors.textSecondary, fontSize: 14 }}>{text}</Text>
+      <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{text}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, padding: 16 },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+  },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   topText: { flex: 1 },
-  name: { fontSize: 22, fontWeight: '800' },
-  description: { fontSize: 14, marginTop: 4, lineHeight: 20 },
-  infoList: { marginTop: 16, gap: 8 },
-  infoLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  name: { fontSize: 18, fontWeight: '600', letterSpacing: -0.3 },
+  description: { fontSize: 13, marginTop: 3, lineHeight: 18 },
+  infoList: { marginTop: 14, gap: 7 },
+  infoLine: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    alignItems: 'center',
+  },
   archive: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     borderRadius: 14,
+    borderWidth: 1,
     paddingVertical: 15,
     marginTop: 12,
   },
-  archiveText: { fontSize: 16, fontWeight: '700' },
+  archiveText: { fontSize: 16, fontWeight: '600' },
   delete: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -356,5 +392,5 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     marginTop: 12,
   },
-  deleteText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  deleteText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 });
